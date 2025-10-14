@@ -9,7 +9,20 @@
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-  body, html { margin:0; padding:0; height:100%; }
+  body, html { margin:0; padding:0; height:100%; overflow:hidden; background:black; }
+  .floating-ray {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0% { transform: translateY(0px) translateX(0px) rotate(0deg);}
+    50% { transform: translateY(-50px) translateX(50px) rotate(180deg);}
+    100% { transform: translateY(0px) translateX(0px) rotate(360deg);}
+  }
 </style>
 </head>
 <body>
@@ -33,7 +46,6 @@ const PRELOADED_QUESTIONS = [
 ];
 
 function shuffleArray(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;}
-function uid(prefix='id'){return prefix+Math.random().toString(36).slice(2,9);}
 
 function KiteQuizTool(){
   const [mode,setMode]=useState('home');
@@ -45,22 +57,38 @@ function KiteQuizTool(){
   const [finished,setFinished]=useState(false);
   const [timeLeft,setTimeLeft]=useState(0);
   const timerRef=useRef(null);
-  const [questions,setQuestions]=useState(()=>{const saved=localStorage.getItem('kite_quiz_questions_v4'); return saved?JSON.parse(saved):PRELOADED_QUESTIONS;});
-  const results=JSON.parse(localStorage.getItem('kite_quiz_results_v4')||'[]');
+  const [questions,setQuestions]=useState(()=>{const saved=localStorage.getItem('kite_quiz_questions_v6'); return saved?JSON.parse(saved):PRELOADED_QUESTIONS;});
+  const results=JSON.parse(localStorage.getItem('kite_quiz_results_v6')||'[]');
 
-  useEffect(()=>{ localStorage.setItem('kite_quiz_questions_v4',JSON.stringify(questions)); },[questions]);
+  useEffect(()=>{ localStorage.setItem('kite_quiz_questions_v6',JSON.stringify(questions)); },[questions]);
   useEffect(()=>{ if(started&&!finished){ setTimeLeft(30); timerRef.current=setInterval(()=>{ setTimeLeft(t=>{ if(t<=1){ clearInterval(timerRef.current); handleSubmitAnswer(null); return 0;} return t-1; }); },1000); return()=>clearInterval(timerRef.current);} },[started,currentIndex,finished]);
 
   function buildDeck(){ let pool=questions.slice(); pool=shuffleArray(pool); const length=Math.min(pool.length,10); const selectedDeck=pool.slice(0,length).map(q=>({...q,choices:shuffleArray(q.choices)})); setDeck(selectedDeck); setCurrentIndex(0); setSelected(null); setScore(0); setFinished(false);}
   function startQuiz(){ buildDeck(); setStarted(true); setMode('player');}
   function resetQuiz(){ setStarted(false); setFinished(false); setDeck([]); setCurrentIndex(0); setSelected(null); clearInterval(timerRef.current); setMode('home');}
-  function saveResult(r){ const prev=[r,...results]; localStorage.setItem('kite_quiz_results_v4',JSON.stringify(prev.slice(0,100)));}
+  function saveResult(r){ const prev=[r,...results]; localStorage.setItem('kite_quiz_results_v6',JSON.stringify(prev.slice(0,100)));}
 
   function handleSubmitAnswer(idx){ clearInterval(timerRef.current); const q=deck[currentIndex]; const original=questions.find(x=>x.id===q.id); const correctChoice=original.choices[original.answerIndex]; const selectedText=idx===null?null:q.choices[idx]; const correct=selectedText===correctChoice; if(correct) setScore(s=>s+1); setSelected(idx); setTimeout(()=>{ if(currentIndex+1>=deck.length){ setFinished(true); setStarted(false); saveResult({date:new Date().toISOString(),score:score+(correct?1:0),total:deck.length}); } else { setCurrentIndex(i=>i+1); setSelected(null); }},700);}
+
+  function FloatingRays(){
+    return (
+      <>
+        {[...Array(6)].map((_,i)=>(
+          <div key={i} className="floating-ray" style={{
+            top: Math.random()*80 + 'vh',
+            left: Math.random()*80 + 'vw',
+            animationDuration: (4+Math.random()*4)+'s',
+            opacity: 0.15 + Math.random()*0.25
+          }}></div>
+        ))}
+      </>
+    );
+  }
 
   function HomePage(){ 
     return (
       <div className="relative h-screen flex flex-col justify-center items-center text-white overflow-hidden">
+        <FloatingRays />
         <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" alt="Logo bg" />
         <div className="relative z-10 text-center space-y-6">
           <h1 className="text-5xl font-bold animate-bounce drop-shadow-lg">Kite Quiz Tool</h1>
@@ -76,6 +104,7 @@ function KiteQuizTool(){
   function Leaderboard(){ 
     return (
       <div className="p-6 text-center text-white relative h-screen overflow-hidden">
+        <FloatingRays />
         <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" alt="Logo bg" />
         <div className="relative z-10">
           <h2 className="text-3xl font-bold mb-4">Leaderboard</h2>
@@ -90,28 +119,4 @@ function KiteQuizTool(){
 
   function Player(){ 
     if(!started&&!finished) return null; 
-    const q=deck[currentIndex]; 
-    const original=questions.find(x=>x.id===q.id); 
-    const correct=original.choices[original.answerIndex]; 
-    return (
-      <div className="p-6 min-h-screen bg-gradient-to-b from-purple-700 to-blue-900 text-white flex flex-col items-center justify-center">
-        <h3 className="text-2xl font-bold mb-2 text-center">{q.question}</h3>
-        <p className="mt-1 mb-4 text-center">Time left: {timeLeft}s | Score: {score}</p>
-        <div className="grid gap-3 w-full max-w-md">
-          {q.choices.map((c,i)=>{
-            const bg=selected===i? (c===correct?'bg-green-400':'bg-red-400'):'bg-white text-black';
-            return <button key={i} onClick={()=>handleSubmitAnswer(i)} disabled={selected!==null} className={`p-3 rounded ${bg} hover:scale-105 transition`}>{c}</button>;
-          })}
-        </div>
-        {finished&&<div className="mt-6 text-xl">Quiz Finished! Score: {score}/{deck.length} <button className="ml-3 px-3 py-1 bg-blue-600 rounded" onClick={resetQuiz}>Back Home</button></div>}
-      </div>
-    );
-  }
-
-  return (<>{mode==='home'?<HomePage/>:mode==='leaderboard'?<Leaderboard/>:<Player/>}</>);
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<KiteQuizTool/>);
-</script>
-</body>
-</html>
+    const q=deck
