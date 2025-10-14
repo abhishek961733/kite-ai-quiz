@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kite Quiz Tool</title>
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- React + ReactDOM CDN -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<!-- Babel for JSX -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  body, html { margin:0; padding:0; height:100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const LOGO_URL = 'https://pbs.twimg.com/profile_images/1962781271978815488/07fQQARS_400x400.jpg';
+const PRELOADED_QUESTIONS = [
+  { id:'q1', question:'What is Kite described as on the gokite.ai homepage?', choices:['A social network for artists','The First AI Payment Blockchain','A cloud storage platform','A search engine for scholarly articles'], answerIndex:1 },
+  { id:'q2', question:'Which economy is Kite purpose-built for?', choices:['Gig economy','Autonomous economy','Sharing economy','Circular economy'], answerIndex:1 },
+  { id:'q3', question:'Which of the following is NOT listed as a feature on the site?', choices:['Cryptographic identity','Programmable governance','Agentic payments','Built-in social media feed'], answerIndex:3 },
+  { id:'q4', question:'What consensus or special term does the site mention as powering Kite?', choices:['Proof of Stake (PoS)','Proof of Work (PoW)','Proof of Artificial Intelligence (PoAI)','Delegated Proof of Stake (DPoS)'], answerIndex:2 },
+  { id:'q5', question:'What is the advertised average block time on the Kite site? (rounded)', choices:['1s','10s','30s','0.1s'], answerIndex:0 },
+  { id:'q6', question:'Which testnet is linked from the homepage?', choices:['Ozone Testnet','Kite Testnet','Zephyr Testnet','Nimbus Testnet'], answerIndex:0 },
+  { id:'q7', question:'What kind of fees does the site claim the chain has?', choices:['High gas fees','Near zero gas fees','Fixed monthly fees','No fees but subscription'], answerIndex:1 },
+  { id:'q8', question:'Which capability allows agents to transact natively on the Kite platform?', choices:['Agentic Payment','Manual invoicing','Third-party gateways','Off-chain escrow'], answerIndex:0 },
+  { id:'q9', question:'The site refers to a store where agents can be discovered and listed. What is it called?', choices:['Agent Bazaar','Agent Market','Agent Store','Agent Library'], answerIndex:2 },
+  { id:'q10', question:'Which of these is highlighted as an identity feature for AI models and agents?', choices:['Cryptographic identity for actors and assets','Centralized profiles managed by Kite','Public user handles only','Anonymous identities only'], answerIndex:0 }
+];
+
+function shuffleArray(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;}
+function uid(prefix='id'){return prefix+Math.random().toString(36).slice(2,9);}
+
+function KiteQuizTool(){
+  const [mode,setMode]=useState('home'); // home, player, leaderboard, admin
+  const [deck,setDeck]=useState([]);
+  const [currentIndex,setCurrentIndex]=useState(0);
+  const [selected,setSelected]=useState(null);
+  const [score,setScore]=useState(0);
+  const [started,setStarted]=useState(false);
+  const [finished,setFinished]=useState(false);
+  const [timeLeft,setTimeLeft]=useState(0);
+  const timerRef=useRef(null);
+
+  const [questions,setQuestions]=useState(()=>{const saved=localStorage.getItem('kite_quiz_questions_v3'); return saved?JSON.parse(saved):PRELOADED_QUESTIONS;});
+  const results=JSON.parse(localStorage.getItem('kite_quiz_results_v3')||'[]');
+
+  useEffect(()=>{ localStorage.setItem('kite_quiz_questions_v3',JSON.stringify(questions)); },[questions]);
+  useEffect(()=>{ if(started&&!finished){ setTimeLeft(30); timerRef.current=setInterval(()=>{ setTimeLeft(t=>{ if(t<=1){ clearInterval(timerRef.current); handleSubmitAnswer(null); return 0;} return t-1; }); },1000); return()=>clearInterval(timerRef.current);} },[started,currentIndex,finished]);
+
+  function buildDeck(){ let pool=questions.slice(); pool=shuffleArray(pool); const length=Math.min(pool.length,10); const selectedDeck=pool.slice(0,length).map(q=>({...q,choices:shuffleArray(q.choices)})); setDeck(selectedDeck); setCurrentIndex(0); setSelected(null); setScore(0); setFinished(false);}
+  function startQuiz(){ buildDeck(); setStarted(true); setMode('player');}
+  function resetQuiz(){ setStarted(false); setFinished(false); setDeck([]); setCurrentIndex(0); setSelected(null); clearInterval(timerRef.current); setMode('home');}
+  function saveResult(r){ const prev=[r,...results]; localStorage.setItem('kite_quiz_results_v3',JSON.stringify(prev.slice(0,100)));}
+
+  function handleSubmitAnswer(idx){ clearInterval(timerRef.current); const q=deck[currentIndex]; const original=questions.find(x=>x.id===q.id); const correctChoice=original.choices[original.answerIndex]; const selectedText=idx===null?null:q.choices[idx]; const correct=selectedText===correctChoice; if(correct) setScore(s=>s+1); setSelected(idx); setTimeout(()=>{ if(currentIndex+1>=deck.length){ setFinished(true); setStarted(false); saveResult({date:new Date().toISOString(),score:score+(correct?1:0),total:deck.length}); } else { setCurrentIndex(i=>i+1); setSelected(null); }},700);}
+
+  function HomePage(){ return (
+    <div className="relative h-screen flex flex-col justify-center items-center text-white">
+      <div className="absolute inset-0">
+        <img src={LOGO_URL} className="w-full h-full object-cover filter blur-xl opacity-30 animate-pulse" alt="Logo bg" />
+      </div>
+      <div className="relative z-10 text-center space-y-4">
+        <h1 className="text-5xl font-bold animate-bounce">Kite Quiz Tool</h1>
+        <div className="space-x-4">
+          <button className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition" onClick={startQuiz}>Start Quiz</button>
+          <button className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 transition" onClick={()=>setMode('leaderboard')}>Leaderboard</button>
+        </div>
+      </div>
+    </div>
+  );}
+
+  function Leaderboard(){ return (
+    <div className="p-6 text-center text-white relative h-screen">
+      <div className="absolute inset-0">
+        <img src={LOGO_URL} className="w-full h-full object-cover filter blur-xl opacity-30 animate-pulse" alt="Logo bg" />
+      </div>
+      <div className="relative z-10">
+        <h2 className="text-3xl font-bold mb-4">Leaderboard</h2>
+        <ul className="space-y-2 max-w-md mx-auto">
+          {results.slice(0,10).map((r,i)=><li key={i} className="text-lg bg-black bg-opacity-40 p-2 rounded">{i+1}. {new Date(r.date).toLocaleDateString()} - {r.score}/{r.total}</li>)}
+        </ul>
+        <button className="mt-4 px-4 py-2 bg-red-600 rounded hover:bg-red-500" onClick={()=>setMode('home')}>Back</button>
+      </div>
+    </div>
+  );}
+
+  function Player(){ if(!started&&!finished) return null; const q=deck[currentIndex]; const original=questions.find(x=>x.id===q.id); const correct=original.choices[original.answerIndex]; return (
+    <div className="p-6 min-h-screen bg-gradient-to-b from-purple-700 to-blue-900 text-white">
+      <h3 className="text-2xl font-bold">Question {currentIndex+1}/{deck.length}</h3>
+      <p className="mt-2">Time left: {timeLeft}s | Score: {score}</p>
+      <div className="mt-4 grid gap-3">
+        {q.choices.map((c,i)=>{
+          const bg=selected===i? (c===correct?'bg-green-400':'bg-red-400'):'bg-white text-black';
+          return <button key={i} onClick={()=>handleSubmitAnswer(i)} disabled={selected!==null} className={`p-3 rounded ${bg}`}>{c}</button>;
+        })}
+      </div>
+      {finished&&<div className="mt-4 text-xl">Quiz Finished! Score: {score}/{deck.length} <button className="ml-3 px-3 py-1 bg-blue-600 rounded" onClick={resetQuiz}>Back Home</button></div>}
+    </div>
+  );}
+
+  return (<>{mode==='home'?<HomePage/>:mode==='leaderboard'?<Leaderboard/>:<Player/>}</>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<KiteQuizTool/>);
+</script>
+</body>
+</html>
