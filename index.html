@@ -1,251 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kite Quiz Tool</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
+function HomePage() { 
+  return (
+    <div className="relative h-screen flex flex-col justify-center items-center text-white text-center overflow-hidden">
+      {/* Background blur & rays */}
+      <Background />
 
-<body class="bg-black text-white overflow-hidden">
-  <div id="root"></div>
-
-  <script type="text/babel">
-
-  const LOGO_URL = "https://pbs.twimg.com/profile_images/1962781271978815488/07fQQARS_400x400.jpg";
-
-  const questions = [
-    {
-      q: "What is the main goal of GoKite AI?",
-      options: [
-        "AI-powered workflow automation",
-        "Creating social media tools",
-        "Gaming app development",
-        "Blockchain trading"
-      ],
-      correct: 0
-    },
-    {
-      q: "Which technology powers GoKite’s automation features?",
-      options: ["Neural links", "LLMs and APIs", "Smart bots", "Static AI"],
-      correct: 1
-    },
-    {
-      q: "GoKite helps teams automate what?",
-      options: [
-        "Emails only",
-        "Entire business workflows",
-        "Video editing",
-        "Game design"
-      ],
-      correct: 1
-    },
-    {
-      q: "Which sector can benefit from GoKite AI?",
-      options: ["Marketing", "Finance", "HR", "All of the above"],
-      correct: 3
-    },
-    {
-      q: "GoKite integrates with which type of tools?",
-      options: ["Only Google apps", "No external tools", "Third-party business tools", "Only chat apps"],
-      correct: 2
-    },
-    {
-      q: "GoKite focuses on increasing what for teams?",
-      options: ["Entertainment", "Efficiency and speed", "Gaming skills", "Vacation time"],
-      correct: 1
-    },
-    {
-      q: "Which of these best describes GoKite’s interface?",
-      options: ["Code-heavy", "User-friendly", "Outdated", "Hard to use"],
-      correct: 1
-    },
-    {
-      q: "Can GoKite automate repetitive tasks?",
-      options: ["No", "Only a few", "Yes, many", "Only with plugins"],
-      correct: 2
-    },
-    {
-      q: "What is GoKite’s official website?",
-      options: ["gokite.app", "kiteai.io", "gokite.ai", "kite.com"],
-      correct: 2
-    },
-    {
-      q: "Who can use GoKite easily?",
-      options: ["Only developers", "Everyone", "Only AI experts", "Only designers"],
-      correct: 1
-    }
-  ];
-
-  function Background() {
-    return (
-      <div
-        className="absolute inset-0 bg-cover bg-center blur-lg brightness-50 animate-pulse"
-        style={{
-          backgroundImage: `url(${LOGO_URL})`,
-          zIndex: 0
-        }}
-      ></div>
-    );
-  }
-
-  function KiteQuizTool() {
-    const [mode, setMode] = React.useState("home");
-    const [index, setIndex] = React.useState(0);
-    const [score, setScore] = React.useState(0);
-    const [answers, setAnswers] = React.useState([]);
-
-    const startQuiz = () => {
-      setMode("quiz");
-      setIndex(0);
-      setScore(0);
-      setAnswers([]);
-    };
-
-    const handleAnswer = (i) => {
-      const correct = i === questions[index].correct;
-      if (correct) setScore(score + 1);
-      setAnswers([...answers, i]);
-      if (index + 1 < questions.length) setIndex(index + 1);
-      else setMode("result");
-    };
-
-    const shareOnX = () => {
-      const shareUrl = encodeURIComponent(window.location.href);
-      const text = encodeURIComponent(
-        `🎯 I scored ${score}/${questions.length} on the Kite Quiz! 🚀\nTry it yourself here:`
-      );
-      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`, "_blank");
-    };
-
-    if (mode === "home")
-      return (
-        <div className="relative h-screen flex flex-col justify-center items-center text-center overflow-hidden">
-          <Background />
-          {/* Glowing Logo */}
-          <div className="absolute inset-0 flex justify-center items-center">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-2xl bg-cyan-400 opacity-40 animate-ping"></div>
-              <img
-                src={LOGO_URL}
-                className="w-44 h-44 rounded-full border-4 border-white shadow-2xl animate-pulse opacity-95 relative z-10"
-                alt="Kite Logo"
-              />
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-72 space-y-4">
-            <h1 className="text-5xl font-bold drop-shadow-lg animate-bounce">Kite Quiz Tool</h1>
-            <div className="space-x-4">
-              <button
-                className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition transform hover:scale-105"
-                onClick={startQuiz}
-              >
-                Start Quiz
-              </button>
-              <button
-                className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 transition transform hover:scale-105"
-                onClick={() => setMode("leader")}
-              >
-                Leaderboard
-              </button>
-            </div>
-          </div>
-
-          {/* Footer credit */}
-          <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">
-            made by <span className="font-semibold">@abxyj90</span>
-          </div>
+      {/* Glowing animated logo */}
+      <div className="absolute inset-0 flex justify-center items-center">
+        <div className="relative">
+          {/* Soft glowing ring */}
+          <div className="absolute inset-0 rounded-full blur-2xl bg-cyan-400 opacity-40 animate-ping"></div>
+          <img 
+            src={LOGO_URL} 
+            className="w-44 h-44 rounded-full border-4 border-white shadow-2xl animate-pulse opacity-95 relative z-10"
+            alt="Kite Logo"
+          />
         </div>
-      );
+      </div>
 
-    if (mode === "quiz") {
-      const q = questions[index];
-      return (
-        <div className="relative h-screen flex flex-col justify-center items-center p-4 text-center overflow-hidden">
-          <Background />
-          <div className="z-10 bg-black bg-opacity-50 p-8 rounded-2xl shadow-2xl w-full max-w-2xl">
-            <h2 className="text-2xl font-bold mb-6">{q.q}</h2>
-            <div className="space-y-3">
-              {q.options.map((opt, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleAnswer(i)}
-                  className="w-full px-4 py-3 bg-gray-700 rounded-lg hover:bg-green-600 transition"
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-            <p className="mt-6 text-sm opacity-80">
-              Question {index + 1} / {questions.length}
-            </p>
-          </div>
-
-          {/* Footer credit */}
-          <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">
-            made by <span className="font-semibold">@abxyj90</span>
-          </div>
+      {/* Title and buttons */}
+      <div className="relative z-10 mt-72 space-y-4">
+        <h1 className="text-5xl font-bold drop-shadow-lg animate-bounce">Kite Quiz Tool</h1>
+        <div className="space-x-4">
+          <button 
+            className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition transform hover:scale-105"
+            onClick={startQuiz}
+          >
+            Start Quiz
+          </button>
+          <button 
+            className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 transition transform hover:scale-105"
+            onClick={() => setMode('leaderboard')}
+          >
+            Leaderboard
+          </button>
         </div>
-      );
-    }
+      </div>
 
-    if (mode === "result")
-      return (
-        <div className="relative h-screen flex flex-col justify-center items-center text-center overflow-hidden">
-          <Background />
-          <div className="z-10 bg-black bg-opacity-60 p-10 rounded-2xl shadow-2xl">
-            <h1 className="text-4xl font-bold mb-4">🎉 Congratulations!</h1>
-            <p className="text-xl mb-6">You scored {score} / {questions.length}</p>
-            <button
-              onClick={shareOnX}
-              className="px-6 py-3 bg-blue-500 rounded-lg hover:bg-blue-400 transition"
-            >
-              Share on X
-            </button>
-            <button
-              onClick={() => setMode("home")}
-              className="ml-4 px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition"
-            >
-              Play Again
-            </button>
-          </div>
-
-          {/* Footer credit */}
-          <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">
-            made by <span className="font-semibold">@abxyj90</span>
-          </div>
-        </div>
-      );
-
-    if (mode === "leader")
-      return (
-        <div className="relative h-screen flex flex-col justify-center items-center text-center overflow-hidden">
-          <Background />
-          <div className="z-10 bg-black bg-opacity-60 p-8 rounded-2xl shadow-xl">
-            <h2 className="text-3xl font-bold mb-4">🏆 Leaderboard</h2>
-            <p className="text-gray-300 mb-6">Coming soon...</p>
-            <button
-              onClick={() => setMode("home")}
-              className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition"
-            >
-              Back to Home
-            </button>
-          </div>
-
-          {/* Footer credit */}
-          <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">
-            made by <span className="font-semibold">@abxyj90</span>
-          </div>
-        </div>
-      );
-  }
-
-  ReactDOM.render(<KiteQuizTool />, document.getElementById("root"));
-
-  </script>
-</body>
-</html>
+      {/* Footer credit */}
+      <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">
+        made by <span className="font-semibold">@abxyj90</span>
+      </div>
+    </div>
+  );
+}
