@@ -57,18 +57,47 @@ function KiteQuizTool(){
   const [finished,setFinished]=useState(false);
   const [timeLeft,setTimeLeft]=useState(0);
   const timerRef=useRef(null);
-  const [questions,setQuestions]=useState(()=>{const saved=localStorage.getItem('kite_quiz_questions_v7'); return saved?JSON.parse(saved):PRELOADED_QUESTIONS;});
-  const results=JSON.parse(localStorage.getItem('kite_quiz_results_v7')||'[]');
+  const [questions,setQuestions]=useState(()=>{const saved=localStorage.getItem('kite_quiz_questions_v8'); return saved?JSON.parse(saved):PRELOADED_QUESTIONS;});
+  const results=JSON.parse(localStorage.getItem('kite_quiz_results_v8')||'[]');
 
-  useEffect(()=>{ localStorage.setItem('kite_quiz_questions_v7',JSON.stringify(questions)); },[questions]);
+  useEffect(()=>{ localStorage.setItem('kite_quiz_questions_v8',JSON.stringify(questions)); },[questions]);
   useEffect(()=>{ if(started&&!finished){ setTimeLeft(30); timerRef.current=setInterval(()=>{ setTimeLeft(t=>{ if(t<=1){ clearInterval(timerRef.current); handleSubmitAnswer(null); return 0;} return t-1; }); },1000); return()=>clearInterval(timerRef.current);} },[started,currentIndex,finished]);
 
-  function buildDeck(){ let pool=questions.slice(); pool=shuffleArray(pool); const length=Math.min(pool.length,10); const selectedDeck=pool.slice(0,length).map(q=>({...q,choices:shuffleArray(q.choices)})); setDeck(selectedDeck); setCurrentIndex(0); setSelected(null); setScore(0); setFinished(false);}
+  function buildDeck(){ 
+    let pool=questions.slice(); 
+    pool=shuffleArray(pool); 
+    const length=Math.min(pool.length,10); 
+    const selectedDeck=pool.slice(0,length).map(q=>({...q,choices:shuffleArray(q.choices)})); 
+    setDeck(selectedDeck); 
+    setCurrentIndex(0); 
+    setSelected(null); 
+    setScore(0); 
+    setFinished(false);
+  }
   function startQuiz(){ buildDeck(); setStarted(true); setMode('player');}
   function resetQuiz(){ setStarted(false); setFinished(false); setDeck([]); setCurrentIndex(0); setSelected(null); clearInterval(timerRef.current); setMode('home');}
-  function saveResult(r){ const prev=[r,...results]; localStorage.setItem('kite_quiz_results_v7',JSON.stringify(prev.slice(0,100)));}
+  function saveResult(r){ const prev=[r,...results]; localStorage.setItem('kite_quiz_results_v8',JSON.stringify(prev.slice(0,100)));}
 
-  function handleSubmitAnswer(idx){ clearInterval(timerRef.current); const q=deck[currentIndex]; const original=questions.find(x=>x.id===q.id); const correctChoice=original.choices[original.answerIndex]; const selectedText=idx===null?null:q.choices[idx]; const correct=selectedText===correctChoice; if(correct) setScore(s=>s+1); setSelected(idx); setTimeout(()=>{ if(currentIndex+1>=deck.length){ setFinished(true); setStarted(false); saveResult({date:new Date().toISOString(),score:score+(correct?1:0),total:deck.length}); } else { setCurrentIndex(i=>i+1); setSelected(null); }},700);}
+  function handleSubmitAnswer(idx){ 
+    clearInterval(timerRef.current); 
+    const q=deck[currentIndex]; 
+    const original=questions.find(x=>x.id===q.id); 
+    const correctChoice=original.choices[original.answerIndex]; 
+    const selectedText=idx===null?null:q.choices[idx]; 
+    const correct=selectedText===correctChoice; 
+    if(correct) setScore(s=>s+1); 
+    setSelected(idx); 
+    setTimeout(()=>{ 
+      if(currentIndex+1>=deck.length){ 
+        setFinished(true); 
+        setStarted(false); 
+        saveResult({date:new Date().toISOString(),score:score+(correct?1:0),total:deck.length}); 
+      } else { 
+        setCurrentIndex(i=>i+1); 
+        setSelected(null); 
+      }
+    },700);
+  }
 
   function FloatingRays(){
     return [...Array(6)].map((_,i)=>(
@@ -135,6 +164,4 @@ function KiteQuizTool(){
     }
     const q=deck[currentIndex]; 
     const original=questions.find(x=>x.id===q.id); 
-    const correct=original.choices[original.answerIndex]; 
-    return (
-      <div className="p-6 min-h-screen bg-gradient-to-b from-purple-700 to-blue-900 text
+    const correct=original.choices[original.answerIndex
