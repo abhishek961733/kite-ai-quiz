@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Kite Quiz Tool</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -30,176 +30,154 @@ body, html { margin:0; padding:0; height:100%; overflow:hidden; background:black
 
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
+const LOGO_URL = "https://pbs.twimg.com/profile_images/1962781271978815488/07fQQARS_400x400.jpg";
 
-const LOGO_URL = 'https://pbs.twimg.com/profile_images/1962781271978815488/07fQQARS_400x400.jpg';
-const PRELOADED_QUESTIONS = [
-  { id:'q1', question:'What is Kite described as on the gokite.ai homepage?', choices:['A social network for artists','The First AI Payment Blockchain','A cloud storage platform','A search engine for scholarly articles'], answerIndex:1 },
-  { id:'q2', question:'Which economy is Kite purpose-built for?', choices:['Gig economy','Autonomous economy','Sharing economy','Circular economy'], answerIndex:1 },
-  { id:'q3', question:'Which of the following is NOT listed as a feature on the site?', choices:['Cryptographic identity','Programmable governance','Agentic payments','Built-in social media feed'], answerIndex:3 },
-  { id:'q4', question:'What consensus or special term does the site mention as powering Kite?', choices:['Proof of Stake (PoS)','Proof of Work (PoW)','Proof of Artificial Intelligence (PoAI)','Delegated Proof of Stake (DPoS)'], answerIndex:2 },
-  { id:'q5', question:'What is the advertised average block time on the Kite site? (rounded)', choices:['1s','10s','30s','0.1s'], answerIndex:0 },
-  { id:'q6', question:'Which testnet is linked from the homepage?', choices:['Ozone Testnet','Kite Testnet','Zephyr Testnet','Nimbus Testnet'], answerIndex:0 },
-  { id:'q7', question:'What kind of fees does the site claim the chain has?', choices:['High gas fees','Near zero gas fees','Fixed monthly fees','No fees but subscription'], answerIndex:1 },
-  { id:'q8', question:'Which capability allows agents to transact natively on the Kite platform?', choices:['Agentic Payment','Manual invoicing','Third-party gateways','Off-chain escrow'], answerIndex:0 },
-  { id:'q9', question:'The site refers to a store where agents can be discovered and listed. What is it called?', choices:['Agent Bazaar','Agent Market','Agent Store','Agent Library'], answerIndex:2 },
-  { id:'q10', question:'Which of these is highlighted as an identity feature for AI models and agents?', choices:['Cryptographic identity for actors and assets','Centralized profiles managed by Kite','Public user handles only','Anonymous identities only'], answerIndex:0 }
+const QUESTIONS = [
+  {id:'q1',question:'What is Kite described as on the gokite.ai homepage?',choices:['A social network for artists','The First AI Payment Blockchain','A cloud storage platform','A search engine for scholarly articles'],answerIndex:1},
+  {id:'q2',question:'Which economy is Kite purpose-built for?',choices:['Gig economy','Autonomous economy','Sharing economy','Circular economy'],answerIndex:1},
+  {id:'q3',question:'Which of the following is NOT listed as a feature on the site?',choices:['Cryptographic identity','Programmable governance','Agentic payments','Built-in social media feed'],answerIndex:3},
+  {id:'q4',question:'What consensus or special term does the site mention as powering Kite?',choices:['Proof of Stake (PoS)','Proof of Work (PoW)','Proof of Artificial Intelligence (PoAI)','Delegated Proof of Stake (DPoS)'],answerIndex:2},
+  {id:'q5',question:'What is the advertised average block time on the Kite site?',choices:['1s','10s','30s','0.1s'],answerIndex:0},
+  {id:'q6',question:'Which testnet is linked from the homepage?',choices:['Ozone Testnet','Kite Testnet','Zephyr Testnet','Nimbus Testnet'],answerIndex:0},
+  {id:'q7',question:'What kind of fees does the site claim the chain has?',choices:['High gas fees','Near zero gas fees','Fixed monthly fees','No fees but subscription'],answerIndex:1},
+  {id:'q8',question:'Which capability allows agents to transact natively on the Kite platform?',choices:['Agentic Payment','Manual invoicing','Third-party gateways','Off-chain escrow'],answerIndex:0},
+  {id:'q9',question:'The site refers to a store where agents can be discovered and listed. What is it called?',choices:['Agent Bazaar','Agent Market','Agent Store','Agent Library'],answerIndex:2},
+  {id:'q10',question:'Which of these is highlighted as an identity feature for AI models and agents?',choices:['Cryptographic identity for actors and assets','Centralized profiles managed by Kite','Public user handles only','Anonymous identities only'],answerIndex:0}
 ];
 
-function shuffleArray(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;}
+function shuffle(a){return a.sort(()=>Math.random()-0.5);}
 
-function KiteQuizTool(){
-  const [mode,setMode]=useState('home');
-  const [deck,setDeck]=useState([]);
-  const [currentIndex,setCurrentIndex]=useState(0);
-  const [selected,setSelected]=useState(null);
-  const [score,setScore]=useState(0);
-  const [started,setStarted]=useState(false);
-  const [finished,setFinished]=useState(false);
-  const [timeLeft,setTimeLeft]=useState(0);
-  const timerRef=useRef(null);
-  const [questions,setQuestions]=useState(()=>{const saved=localStorage.getItem('kite_quiz_questions_v8'); return saved?JSON.parse(saved):PRELOADED_QUESTIONS;});
-  const results=JSON.parse(localStorage.getItem('kite_quiz_results_v8')||'[]');
-
-  useEffect(()=>{ localStorage.setItem('kite_quiz_questions_v8',JSON.stringify(questions)); },[questions]);
-  useEffect(()=>{ if(started&&!finished){ setTimeLeft(30); timerRef.current=setInterval(()=>{ setTimeLeft(t=>{ if(t<=1){ clearInterval(timerRef.current); handleSubmitAnswer(null); return 0;} return t-1; }); },1000); return()=>clearInterval(timerRef.current);} },[started,currentIndex,finished]);
-
-  function buildDeck(){ 
-    let pool=shuffleArray(questions); 
-    const selectedDeck=pool.slice(0,10).map(q=>({...q,choices:shuffleArray(q.choices)})); 
-    setDeck(selectedDeck); 
-    setCurrentIndex(0); 
-    setSelected(null); 
-    setScore(0); 
-    setFinished(false);
-  }
-  function startQuiz(){ buildDeck(); setStarted(true); setMode('player');}
-  function resetQuiz(){ setStarted(false); setFinished(false); clearInterval(timerRef.current); setMode('home');}
-  function saveResult(r){ const prev=[r,...results]; localStorage.setItem('kite_quiz_results_v8',JSON.stringify(prev.slice(0,100)));}
-
-  function handleSubmitAnswer(idx){ 
-    clearInterval(timerRef.current); 
-    const q=deck[currentIndex]; 
-    const original=questions.find(x=>x.id===q.id); 
-    const correctChoice=original.choices[original.answerIndex]; 
-    const selectedText=idx===null?null:q.choices[idx]; 
-    const correct=selectedText===correctChoice; 
-    if(correct) setScore(s=>s+1); 
-    setSelected(idx); 
-    setTimeout(()=>{ 
-      if(currentIndex+1>=deck.length){ 
-        setFinished(true); 
-        setStarted(false); 
-        saveResult({date:new Date().toISOString(),score:score+(correct?1:0),total:deck.length}); 
-      } else { 
-        setCurrentIndex(i=>i+1); 
-        setSelected(null); 
-      }
-    },700);
-  }
-
-  function FloatingRays(){
-    return [...Array(6)].map((_,i)=>(<div key={i} className="floating-ray" style={{
-      top: Math.random()*80 + 'vh',
-      left: Math.random()*80 + 'vw',
-      animationDuration: (4+Math.random()*4)+'s',
-      opacity: 0.15 + Math.random()*0.25
-    }}></div>));
-  }
-
-  function HomePage(){ 
-    return (
-      <div className="relative h-screen flex flex-col justify-center items-center text-white overflow-hidden">
-        <FloatingRays />
-        <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" alt="Logo bg" />
-        <div className="relative z-10 text-center space-y-6">
-          <h1 className="text-5xl font-bold animate-bounce drop-shadow-lg">Kite Quiz Tool</h1>
-          <img src={LOGO_URL} className="mx-auto w-32 h-32 rounded-full animate-pulse border-4 border-white shadow-lg" alt="logo" />
-          <div className="space-x-4">
-            <button className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition" onClick={startQuiz}>Start Quiz</button>
-            <button className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 transition" onClick={()=>setMode('leaderboard')}>Leaderboard</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function Leaderboard(){ 
-    return (
-      <div className="p-6 text-center text-white relative h-screen overflow-hidden">
-        <FloatingRays />
-        <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" alt="Logo bg" />
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold mb-4">Leaderboard</h2>
-          <ul className="space-y-2 max-w-md mx-auto text-white">
-            {results.slice(0,10).map((r,i)=><li key={i} className="text-lg bg-black bg-opacity-40 p-2 rounded">{i+1}. {new Date(r.date).toLocaleDateString()} - {r.score}/{r.total}</li>)}
-          </ul>
-          <button className="mt-4 px-4 py-2 bg-red-600 rounded hover:bg-red-500" onClick={()=>setMode('home')}>Back</button>
-        </div>
-      </div>
-    );
-  }
-
-  function Player(){
-    if(!started && !finished) return null;
-
-    if(finished){
-      const shareText = `I scored ${score}/${deck.length} on Kite Quiz! Try it yourself!`;
-      const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-      return (
-        <div className="relative h-screen flex flex-col justify-center items-center text-white overflow-hidden">
-          <FloatingRays />
-          <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" alt="Logo bg" />
-          <div className="relative z-10 text-center space-y-4">
-            <h2 className="text-4xl font-bold animate-bounce drop-shadow-lg">🎉 Congratulations! 🎉</h2>
-            <p className="text-2xl">Your Score: {score}/{deck.length}</p>
-            <div className="space-x-3">
-              <button className="px-5 py-2 bg-blue-600 rounded hover:bg-blue-500" onClick={()=>window.open(shareUrl,'_blank')}>Share on X</button>
-              <button className="px-5 py-2 bg-green-600 rounded hover:bg-green-500" onClick={resetQuiz}>Back Home</button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const q = deck[currentIndex];
-    const original = questions.find(x=>x.id===q.id);
-    const correctAnswer = original.choices[original.answerIndex];
-
-    return (
-      <div className="relative h-screen flex flex-col justify-center items-center text-white overflow-hidden p-4">
-        <FloatingRays />
-        <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" alt="Logo bg" />
-        <div className="relative z-10 max-w-xl text-center">
-          <h2 className="text-2xl font-bold mb-2">Time Left: {timeLeft}s</h2>
-          <h3 className="text-3xl mb-6">{q.question}</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {q.choices.map((c,idx)=>(
-              <button key={idx}
-                className={`px-4 py-3 rounded text-lg transition ${
-                  selected===idx
-                    ? (c===correctAnswer?'bg-green-600':'bg-red-600')
-                    : 'bg-gray-800 hover:bg-gray-700'
-                }`}
-                onClick={()=>!selected && handleSubmitAnswer(idx)}>
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+function Background(){
   return (
     <>
-      {mode==='home' && <HomePage />}
-      {mode==='leaderboard' && <Leaderboard />}
-      {mode==='player' && <Player />}
+      <img src={LOGO_URL} className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-40 animate-pulse" />
+      {[...Array(6)].map((_,i)=>(<div key={i} className="floating-ray" style={{
+        top: Math.random()*80 + 'vh',
+        left: Math.random()*80 + 'vw',
+        animationDuration: (4+Math.random()*4)+'s',
+        opacity: 0.15 + Math.random()*0.25
+      }} />))}
     </>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<KiteQuizTool />);
+function App(){
+  const [mode,setMode]=useState("home");
+  const [deck,setDeck]=useState([]);
+  const [i,setI]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [fin,setFin]=useState(false);
+  const [timer,setTimer]=useState(30);
+  const ref=useRef();
+  const results=JSON.parse(localStorage.getItem("kite_quiz_results")||"[]");
+
+  function startQuiz(){
+    const d=shuffle([...QUESTIONS]);
+    setDeck(d);
+    setI(0);setSel(null);setScore(0);setFin(false);
+    setMode("quiz");setTimer(30);
+  }
+
+  useEffect(()=>{
+    if(mode==="quiz"&&!fin){
+      const id=setInterval(()=>setTimer(t=>t>0?t-1:0),1000);
+      ref.current=id;
+      return ()=>clearInterval(id);
+    }
+  },[mode,i]);
+
+  function ans(idx){
+    const correct=QUESTIONS.find(q=>q.id===deck[i].id).choices[deck[i].answerIndex];
+    const is=deck[i].choices[idx]===correct;
+    if(is) setScore(s=>s+1);
+    setSel(idx);
+    setTimeout(()=>{
+      if(i+1>=deck.length){
+        setFin(true);
+        setMode("finish");
+        const newRes=[{date:new Date().toISOString(),score:score+(is?1:0),total:deck.length},...results];
+        localStorage.setItem("kite_quiz_results",JSON.stringify(newRes.slice(0,20)));
+      } else {setI(x=>x+1);setSel(null);setTimer(30);}
+    },700);
+  }
+
+  function copyLink(){
+    navigator.clipboard.writeText(window.location.href);
+    alert("Quiz link copied!");
+  }
+
+  if(mode==="home") return (
+    <div className="relative h-screen flex flex-col justify-center items-center text-white text-center">
+      <Background/>
+      <div className="relative z-10">
+        <h1 className="text-5xl font-bold mb-6 animate-bounce">Kite Quiz Tool</h1>
+        <button className="px-6 py-3 bg-green-600 rounded-lg m-2 hover:bg-green-500" onClick={startQuiz}>Start Quiz</button>
+        <button className="px-6 py-3 bg-blue-600 rounded-lg m-2 hover:bg-blue-500" onClick={()=>setMode("leader")}>Leaderboard</button>
+      </div>
+      <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">made by <span className="font-semibold">@abxyj90</span></div>
+    </div>
+  );
+
+  if(mode==="leader") return (
+    <div className="relative h-screen flex flex-col justify-center items-center text-white text-center">
+      <Background/>
+      <div className="relative z-10 max-w-md">
+        <h2 className="text-3xl font-bold mb-4">Leaderboard</h2>
+        <ul className="bg-black bg-opacity-50 p-4 rounded-lg">
+          {results.length?results.map((r,i)=><li key={i}>{i+1}. {new Date(r.date).toLocaleDateString()} - {r.score}/{r.total}</li>):<p>No scores yet</p>}
+        </ul>
+        <button className="mt-4 px-5 py-2 bg-red-600 rounded hover:bg-red-500" onClick={()=>setMode("home")}>Back</button>
+      </div>
+      <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">made by <span className="font-semibold">@abxyj90</span></div>
+    </div>
+  );
+
+  if(mode==="finish"){
+    const quizLink=window.location.href;
+    const shareText=`I scored ${score}/${deck.length} on Kite Quiz! Try it yourself 👇`;
+    const shareUrl=`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(quizLink)}`;
+
+    return (
+      <div className="relative h-screen flex flex-col justify-center items-center text-white text-center">
+        <Background/>
+        <div className="relative z-10">
+          <h2 className="text-4xl font-bold mb-4">🎉 Congratulations! 🎉</h2>
+          <p className="text-2xl mb-4">Your Score: {score}/{deck.length}</p>
+          <div className="space-x-3">
+            <button className="px-5 py-2 bg-blue-600 rounded hover:bg-blue-500" onClick={()=>window.open(shareUrl,'_blank')}>Share on X</button>
+            <button className="px-5 py-2 bg-yellow-500 rounded hover:bg-yellow-400" onClick={copyLink}>Copy Link</button>
+            <button className="px-5 py-2 bg-green-600 rounded hover:bg-green-500" onClick={()=>setMode('home')}>Back Home</button>
+          </div>
+        </div>
+        <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">made by <span className="font-semibold">@abxyj90</span></div>
+      </div>
+    );
+  }
+
+  const q=deck[i];
+  return (
+    <div className="relative h-screen flex flex-col justify-center items-center text-white text-center">
+      <Background/>
+      <div className="relative z-10 max-w-xl">
+        <h2 className="text-2xl font-bold mb-4">{q.question}</h2>
+        <p className="mb-2">⏳ {timer}s left</p>
+        <div className="space-y-2">
+          {q.choices.map((c,idx)=>(
+            <button key={idx} disabled={sel!==null}
+              onClick={()=>ans(idx)}
+              className={`block w-full py-2 rounded ${sel===idx?(QUESTIONS.find(x=>x.id===q.id).choices[QUESTIONS.find(x=>x.id===q.id).answerIndex]===c?'bg-green-600':'bg-red-600'):'bg-gray-700 hover:bg-gray-600'}`}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="fixed bottom-2 left-3 text-xs text-white opacity-70 z-50">made by <span className="font-semibold">@abxyj90</span></div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
